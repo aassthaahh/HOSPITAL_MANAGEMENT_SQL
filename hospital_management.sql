@@ -1,106 +1,86 @@
-DROP SCHEMA IF EXISTS hospital_management CASCADE;
-CREATE SCHEMA IF NOT EXISTS hospital_management;
+-- Create Database
+DROP DATABASE IF EXISTS hospital_management;
+CREATE DATABASE hospital_management;
+USE hospital_management;
 
-DROP TABLE IF EXISTS online_retail_app.user_login;
-CREATE TABLE IF NOT EXISTS online_retail_app.user_login (
-	user_id TEXT PRIMARY KEY,
-    user_password TEXT,
-    first_name TEXT,
-	last_name TEXT,
-	sign_up_on DATE,
-	email_id TEXT
-);
-
-DROP TABLE IF EXISTS hospital_management.patient;
-CREATE TABLE IF NOT EXISTS hospital_management.patient (
+-- Patient Table
+DROP TABLE IF EXISTS patient;
+CREATE TABLE patient (
     email VARCHAR(50) PRIMARY KEY,
-    password varchar(30) NOT NULL,
+    password VARCHAR(255) NOT NULL,
     name VARCHAR(50) NOT NULL,
-    address varchar(60) NOT NULL,
-    gender VARCHAR(20) NOT NULL
+    address VARCHAR(100) NOT NULL,
+    gender ENUM('Male', 'Female', 'Other') NOT NULL
 );
 
-DROP TABLE IF EXISTS hospital_management.medical_history;
-CREATE TABLE IF NOT EXISTS hospital_management.medical_history (
-    medical_history_id int PRIMARY KEY,
-    date DATE NOT NULL,
-    conditions VARCHAR(100) NOT NULL,
-    surgeries VARCHAR(100) NOT NULL,
-    medication VARCHAR(100) NOT NULL
-);
-
-DROP TABLE IF EXISTS hospital_management.doctor;
-CREATE TABLE IF NOT EXISTS hospital_management.doctor (
+-- Doctor Table
+DROP TABLE IF EXISTS doctor;
+CREATE TABLE doctor (
     email VARCHAR(50) PRIMARY KEY,
-    gender varchar(20) NOT NULL,
-    password varchar(30) NOT NULL,
-    name VARCHAR(50) NOT NULL
+    password VARCHAR(255) NOT NULL,
+    name VARCHAR(50) NOT NULL,
+    gender ENUM('Male', 'Female', 'Other') NOT NULL
 );
 
-DROP TABLE IF EXISTS hospital_management.appointment;
-CREATE TABLE IF NOT EXISTS hospital_management.appointment (
-    appointment_id int PRIMARY KEY,
+-- Appointment Table
+DROP TABLE IF EXISTS appointment;
+CREATE TABLE appointment (
+    appointment_id INT AUTO_INCREMENT PRIMARY KEY,
+    patient_email VARCHAR(50),
+    doctor_email VARCHAR(50),
     date DATE NOT NULL,
     start_time TIME NOT NULL,
     end_time TIME NOT NULL,
-    status varchar(15) NOT NULL
+    status ENUM('Scheduled', 'Completed', 'Cancelled') NOT NULL DEFAULT 'Scheduled',
+    FOREIGN KEY (patient_email) REFERENCES patient(email) ON DELETE CASCADE,
+    FOREIGN KEY (doctor_email) REFERENCES doctor(email) ON DELETE CASCADE
 );
 
-DROP TABLE IF EXISTS hospital_management.patient_visits;
-CREATE TABLE IF NOT EXISTS hospital_management.patient_visits (
-    patient VARCHAR(50) NOT NULL,
-    appt SERIAL,
-    concerns varchar(40) NOT NULL,
-    symptoms varchar(40) NOT NULL,
-    FOREIGN KEY (patient) REFERENCES hospital_management.patient (email),
-    FOREIGN KEY (appt) REFERENCES hospital_management.appointment (appointment_id),
-    PRIMARY KEY (patient, appt)
+-- Medical History Table
+DROP TABLE IF EXISTS medical_history;
+CREATE TABLE medical_history (
+    history_id INT AUTO_INCREMENT PRIMARY KEY,
+    patient_email VARCHAR(50) NOT NULL,
+    date DATE NOT NULL,
+    conditions TEXT NOT NULL,
+    surgeries TEXT NOT NULL,
+    medication TEXT NOT NULL,
+    FOREIGN KEY (patient_email) REFERENCES patient(email) ON DELETE CASCADE
 );
 
-DROP TABLE IF EXISTS hospital_management.schedule;
-CREATE TABLE IF NOT EXISTS hospital_management.schedule (
-    schedule_id SERIAL UNIQUE,
+-- Patient Visits Table
+DROP TABLE IF EXISTS patient_visits;
+CREATE TABLE patient_visits (
+    visit_id INT AUTO_INCREMENT PRIMARY KEY,
+    patient_email VARCHAR(50) NOT NULL,
+    appointment_id INT NOT NULL,
+    concerns TEXT NOT NULL,
+    symptoms TEXT NOT NULL,
+    FOREIGN KEY (patient_email) REFERENCES patient(email) ON DELETE CASCADE,
+    FOREIGN KEY (appointment_id) REFERENCES appointment(appointment_id) ON DELETE CASCADE
+);
+
+-- Diagnosis Table
+DROP TABLE IF EXISTS diagnose;
+CREATE TABLE diagnose (
+    diagnosis_id INT AUTO_INCREMENT PRIMARY KEY,
+    appointment_id INT NOT NULL,
+    doctor_email VARCHAR(50) NOT NULL,
+    diagnosis TEXT NOT NULL,
+    prescription TEXT NOT NULL,
+    FOREIGN KEY (appointment_id) REFERENCES appointment(appointment_id) ON DELETE CASCADE,
+    FOREIGN KEY (doctor_email) REFERENCES doctor(email) ON DELETE CASCADE
+);
+
+-- Doctor Schedule Table
+DROP TABLE IF EXISTS doctor_schedule;
+CREATE TABLE doctor_schedule (
+    schedule_id INT AUTO_INCREMENT PRIMARY KEY,
+    doctor_email VARCHAR(50) NOT NULL,
+    day ENUM('Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday') NOT NULL,
     start_time TIME NOT NULL,
     end_time TIME NOT NULL,
     break_time TIME NOT NULL,
-    day varchar(20) NOT NULL,
-    PRIMARY KEY (schedule_id, start_time, end_time, break_time, day)
+    FOREIGN KEY (doctor_email) REFERENCES doctor(email) ON DELETE CASCADE
 );
 
-DROP TABLE IF EXISTS hospital_management.patients_history;
-CREATE TABLE IF NOT EXISTS hospital_management.patients_history (
-    patient VARCHAR(50) NOT NULL,
-    history SERIAL,
-    FOREIGN KEY (patient) REFERENCES hospital_management.patient (email),
-    FOREIGN KEY (history) REFERENCES hospital_management.medical_history (medical_history_id),
-    PRIMARY KEY (history)
-);
-
-DROP TABLE IF EXISTS hospital_management.diagnose;
-CREATE TABLE IF NOT EXISTS hospital_management.diagnose (
-    appt SERIAL,
-    doctor VARCHAR(50) NOT NULL,
-    diagnosis varchar(40) NOT NULL,
-    prescription VARCHAR(50) NOT NULL,
-    FOREIGN KEY (appt) REFERENCES hospital_management.appointment (appointment_id),
-    FOREIGN KEY (doctor) REFERENCES hospital_management.doctor (email),
-    PRIMARY KEY (appt, doctor)
-);
-
-DROP TABLE IF EXISTS hospital_management.doctor_schedules;
-CREATE TABLE IF NOT EXISTS hospital_management.doctor_schedules (
-    sched SERIAL,
-    doctor VARCHAR(50) NOT NULL,
-    FOREIGN KEY (sched) REFERENCES hospital_management.schedule (schedule_id),
-    FOREIGN KEY (doctor) REFERENCES hospital_management.doctor (email),
-    PRIMARY KEY (sched, doctor)
-);
-
-DROP TABLE IF EXISTS hospital_management.doctor_view_history;
-CREATE TABLE IF NOT EXISTS hospital_management.doctor_view_history (
-    history SERIAL,
-    doctor VARCHAR(50) NOT NULL,
-    FOREIGN KEY (doctor) REFERENCES hospital_management.doctor (email),
-    FOREIGN KEY (history) REFERENCES hospital_management.medical_history (medical_history_id),
-    PRIMARY KEY (history, doctor)
-);
